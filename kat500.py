@@ -21,7 +21,7 @@ modes = [MODE_BYPASS, MODE_MANUAL, MODE_AUTOMATIC]
 
 class KAT500:
     """
-    Class to interface the Elecraft KAT500 antenna tuner over serial. See https://ftp.elecraft.com/KAT500/Manuals%20Downloads/KAT500%20Automatic%20Antenna%20Tuner%20Serial%20Command%20Reference.pdf for documentation of serial protocol.
+    Class to interface the Elecraft KAT500 antenna tuner over serial. See https://ftp.elecraft.com/KAT500/Manuals%20Downloads/KAT500%20Automatic%20Antenna%20Tuner%20Serial%20Command%20Reference.pdf (saved in docs/) for documentation of serial protocol.
     """
     def __init__(self, serial_port_device = "/dev/ttyTuner", baud_rate = None):
         """
@@ -138,6 +138,14 @@ class KAT500:
         else:
             raise IOError("No valid response from KAT500 to 'MD;' command to get current mode.")
 
+    def get_frequency_counter(self):
+        """
+        Gets the last reading of the internal frequency counter. Returns a value in kHz.
+        """
+        self._write_command("FC")
+        response = self._read_response()
+        return int(response)
+
     def set_mode(self, mode):
         """
         Sets the current mode of the tuner. mode can be MODE_BYPASS, MODE_MANUAL, and MODE_AUTOMATIC.
@@ -154,6 +162,31 @@ class KAT500:
         self._write_command("FT")
         if self._read_response() != "FT":
             raise IOError("KAT500 failed to complete full-search tune.")
+
+    def get_fault(self):
+        """
+        Gets a tuple of the current fault code, the name of the fault, and a description.
+        """
+        self._write_command("FLT")
+        fault_code = int(self._read_response().replace("FLT", ''))
+        if fault_code == 0:
+            return (0, "No Fault", "No error")
+        elif fault_code == 1:
+            return (1, "No Match", "The ATU tune algorithm was unable to find a satisfactory match")
+        elif fault_code == 2:
+            return (2, "Power Above Design Limit for Antenna SWR", "Transmitter power exceeds the design limit for the unmatched antenna SWR. This power limit varies with the SWR of the antenna: 600 watts at 10:1 SWR, 1000 watts at 3:1 SWR.")
+        elif fault_code == 3:
+            return (3, "Power Above Safe Relay Switch Limit", "Transmit power, with the amplifier key line relay in the interrupted position, exceeds the ATU’s safe relay switching limit of 100 watts. This might be the result of failing to route the amplifier key line through the KAT500.")
+        elif fault_code == 4:
+            return (4, "SWR exceeds Amplifier Key Interrupt SWR threshold", "The current SWR exceeds the amplifier key interrupt SWR threshold. Fault code 4 is cleared by a subsequent transmission with SWR below 7/8 of this threshold. Fault code 4 is not written into the fault log.")
+        else:
+            return (fault_code, "Unknown fault code", "The FLT; command appeared to return a fault code that is not in the KAT500's manual. Check that the serial connection is good.")
+
+    def clear_fault(self):
+        """
+        Clears any fault and turns off the FAULT LED on the tuner.
+        """
+        self._write_command("FLTC")
 
     def __del__(self):
         """
