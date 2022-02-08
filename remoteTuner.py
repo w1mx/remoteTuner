@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import asyncio
+import websockets
 from flask import Flask, current_app
 
 app = Flask(__name__)

@@ -14,6 +14,8 @@ Vue.createApp({
             socket: null,
             lastWebStatusUpdateAgo: "???",
             lastHardwareStatusUpdateAgo: "???",
+            usersConnected: "???",
+            userInteractionAgo: "???",
             firmwareRevision: "???",
             powered: "???",
             vswr: "???",
