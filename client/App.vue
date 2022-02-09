@@ -1,8 +1,5 @@
 <template>
     <div>
-        <title>
-            W1MX Remote Tuner Control Panel
-        </title>
         <h1>
             W1MX Remote Tuner Control Panel
         </h1>
@@ -135,6 +132,7 @@
 <script>
 export default {
     mounted() {
+        document.title = "W1MX Remote Tuner Control Panel";
         const url = new URL("/api", window.location.href);
         url.port = 7030;
         url.protocol = url.protocol.replace("https", "wss");
@@ -156,8 +154,8 @@ export default {
             powered: "???",
             vswr: "???",
             mode: "???",
-            faultName: "???",
             faultCode: "???",
+            faultName: "???",
             faultDescription: "???",
             frequencyCounter: "???",
         };

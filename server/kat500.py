@@ -16,8 +16,8 @@ BR3 = 38400
 # Possible modes used by the KAT500.
 MODE_BYPASS = "MDB"
 MODE_MANUAL = "MDM"
-MODE_AUTOMATIC = "MDA"
-modes = [MODE_BYPASS, MODE_MANUAL, MODE_AUTOMATIC]
+MODE_AUTO = "MDA"
+modes = [MODE_BYPASS, MODE_MANUAL, MODE_AUTO]
 
 class KAT500:
     """
@@ -129,7 +129,7 @@ class KAT500:
 
     def get_mode(self):
         """
-        Gets the current mode of the tuner. Returns MODE_BYPASS, MODE_MANUAL, or MODE_AUTOMATIC.
+        Gets the current mode of the tuner. Returns MODE_BYPASS, MODE_MANUAL, or MODE_AUTO.
         """
         self._write_command("MD")
         response = self._read_response()
@@ -148,12 +148,12 @@ class KAT500:
 
     def set_mode(self, mode):
         """
-        Sets the current mode of the tuner. mode can be MODE_BYPASS, MODE_MANUAL, and MODE_AUTOMATIC.
+        Sets the current mode of the tuner. mode can be MODE_BYPASS, MODE_MANUAL, and MODE_AUTO.
         """
         if mode in modes:
             self._write_command(mode)
         else:
-            raise ValueError("Invalid mode provided to set_mode(). Mode must be kat500.MODE_BYPASS, kat500.MODE_MANUAL, or kat500.MODE_AUTOMATIC.")
+            raise ValueError("Invalid mode provided to set_mode(). Mode must be kat500.MODE_BYPASS, kat500.MODE_MANUAL, or kat500.MODE_AUTO.")
 
     def set_full_search_tune(self):
         """
