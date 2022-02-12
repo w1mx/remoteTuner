@@ -139,6 +139,8 @@ export default {
         url.protocol = url.protocol.replace("http", "ws");
         this.socket = new WebSocket(url.href);
         this.socket.addEventListener("message", this.handleSocketMessage);
+        this.socket.addEventListener("close", this.handleSocketClosed);
+        this.socket.addEventListener("error", this.handleSocketError);
     },
     unmounted() {
         this.socket.removeEventListener("message", this.handleSocketMessage);
@@ -163,6 +165,17 @@ export default {
     methods: {
         handleSocketMessage(event) {
             console.log(event.data);
+        },
+        handleSocketClosed(event) {
+            if (event.wasClean) {
+                console.log(`Socket closed cleanly with code ${event.code} and reason ${event.reason}.`);
+            }
+            else {
+                console.log(`Socket closed unexpectedly.`);
+            }
+        },
+        handleSocketError(error) {
+            console.log(`Socket error: ${error.message}`);
         },
         handleTuneButton() {
 

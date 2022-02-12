@@ -3,6 +3,7 @@
 TIME_BETWEEN_POLLS = 5
 
 import time
+import json
 import kat500
 import asyncio
 import websockets
@@ -18,8 +19,13 @@ def index():
 def flask_thread():
     app.run(host = "0.0.0.0", port = 7020)
 
+connected_websockets = set()
+tuner_status_json = "{}"
+
 def tuner_control_thread():
-    kat500_mode_names = {kat500.MODE_BYPASS: "bypass", kat500.MODE_MANUAL: "manual", kat500.MODE_AUTO: "auto"}
+    global tuner_status_json
+
+    tuner_mode_names = {kat500.MODE_BYPASS: "bypass", kat500.MODE_MANUAL: "manual", kat500.MODE_AUTO: "auto"}
     tuner = kat500.KAT500(baud_rate = 38400)
     while True:
         tuner_status = {}
@@ -31,16 +37,22 @@ def tuner_control_thread():
         tuner_status["faultCode"] = fault[0]
         tuner_status["faultName"] = fault[1]
         tuner_status["faultDescription"] = fault[2]
-        tuner_status["frequencyCounter"] = tuner.get_frequency_counter()
-        print(connected_websockets)
-        print(type(connected_websockets))
+        #tuner_status["frequencyCounter"] = tuner.get_frequency_counter()
+        tuner_status_json = json.dumps(tuner_status)
         time.sleep(TIME_BETWEEN_POLLS)
-
-connected_websockets = set()
 
 async def websocket_connection_handler(websocket, path):
     global connected_websockets
+
     connected_websockets.add(websocket)
+    try:
+        while True:
+            if websocket.closed:
+                break
+            asyncio.ensure_future(websocket.send(tuner_status_json))
+            await asyncio.sleep(TIME_BETWEEN_POLLS)
+    finally:
+        connected_websockets.remove(websocket)
 
 if __name__ == "__main__":
     flask_thread_handle = Thread(target = flask_thread, daemon = True)
