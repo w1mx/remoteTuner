@@ -1,2 +1,3 @@
-static/
-node_modules/
+server/static/
+client/node_modules
+client/package-lock.json

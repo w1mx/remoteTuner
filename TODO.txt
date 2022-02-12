@@ -1,0 +1,1 @@
+Add library checking of which functions are available with current firmware version of tuner.

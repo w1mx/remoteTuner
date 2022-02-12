@@ -54,10 +54,10 @@
                 KAT500 Tuner Status
             </h2>
             <p>
-                Last status update to this page: {{ lastWebStatusUpdateAgo }} seconds ago
+                Last status update to this page: <timeago :datetime="lastWebStatusUpdate" :auto-update="60"></timeago>
             </p>
             <p>
-                Last status update received from KAT500: {{ lastHardwareStatusUpdateAgo }} seconds ago
+                Last status update received from KAT500: <timeago :datetime="lastHardwareStatusUpdate" :auto-update="60"></timeago>
             </p>
             <p>
                 Number of users connected: {{ usersConnected }}
@@ -80,21 +80,26 @@
             <p>
                 Mode:
                 <br>
-                <input type="radio" name="mode" value="bypass" v-model="mode"> Bypass
+                <input type="radio" name="mode" value="bypass" v-model="mode" @change="tunerModeChanged"> Bypass
                 <br>
-                <input type="radio" name="mode" value="manual" v-model="mode"> Manual
+                <input type="radio" name="mode" value="manual" v-model="mode" @change="tunerModeChanged"> Manual
                 <br>
-                <input type="radio" name="mode" value="auto" v-model="mode"> Auto
+                <input type="radio" name="mode" value="auto" v-model="mode" @change="tunerModeChanged"> Auto
             </p>
             <p>
                 Fault: {{ faultName }} (fault code {{ faultCode }}) &mdash; {{ faultDescription }}
             </p>
+            <!--
             <p>
                 Last frequency counter measurement: {{ frequencyCounter }} kHz
                 <br>
                 <i>Note that frequency is only measured while transmitting.</i>
             </p>
-            <button @click="handleTuneButton">
+            -->
+            <button v-if="tuning" @click="handleCancelTuneButton">
+                Cancel Tune
+            </button>
+            <button v-else @click="handleTuneButton">
                 Tune
             </button>
         </div>
@@ -130,6 +135,14 @@
 </style>
 
 <script>
+import Vue from 'vue';
+import VueTimeago from 'vue-timeago';
+
+Vue.use(VueTimeago, {
+    name: "Timeago",
+    locale: "en",
+});
+
 export default {
     mounted() {
         document.title = "W1MX Remote Tuner Control Panel";
@@ -148,8 +161,8 @@ export default {
     data() {
         return {
             socket: null,
-            lastWebStatusUpdateAgo: "???",
-            lastHardwareStatusUpdateAgo: "???",
+            lastWebStatusUpdate: "???",
+            lastHardwareStatusUpdate: "???",
             usersConnected: "???",
             userInteractionAgo: "???",
             firmwareRevision: "???",
@@ -160,11 +173,28 @@ export default {
             faultName: "???",
             faultDescription: "???",
             frequencyCounter: "???",
+            tuning: false,
         };
     },
     methods: {
         handleSocketMessage(event) {
-            console.log(event.data);
+            const tunerStatus = JSON.parse(event.data);
+            console.log(tunerStatus);
+            this.lastWebStatusUpdate = new Date().toISOString();
+            this.lastHardwareStatusUpdate = new Date(tunerStatus.time * 1000.0).toISOString();
+            this.usersConnected = tunerStatus.usersConnected;
+            this.firmwareRevision = tunerStatus.firmwareRevision;
+            this.powered = tunerStatus.powered;
+            this.vswr = tunerStatus.vswr;
+            this.mode = tunerStatus.mode;
+            this.faultCode = tunerStatus.faultCode;
+            this.faultName = tunerStatus.faultName;
+            this.faultDescription = tunerStatus.faultDescription;
+            this.tuning = tunerStatus.tuning;
+            // this.frequencyCounter = tunerStatus.frequencyCounter;
+        },
+        tunerModeChanged() {
+            this.socket.send(JSON.stringify({ "mode": this.mode }));
         },
         handleSocketClosed(event) {
             if (event.wasClean) {
@@ -178,7 +208,10 @@ export default {
             console.log(`Socket error: ${error.message}`);
         },
         handleTuneButton() {
-
+            this.socket.send(JSON.stringify({ "tune": true }));
+        },
+        handleCancelTuneButton() {
+            this.socket.send(JSON.stringify({ "tune": false }));
         },
     },
 }

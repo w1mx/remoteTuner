@@ -160,8 +160,13 @@ class KAT500:
         Starts a full-search tune using the 'FT;' command (equivalent to the 'T;' command).
         """
         self._write_command("FT")
-        if self._read_response() != "FT":
-            raise IOError("KAT500 failed to complete full-search tune.")
+
+    def cancel_full_search_tune(self):
+        """
+        Cancels a full-search tune using the 'CT;' command.
+        """
+        self._write_command("CT")
+        self._read_response()
 
     def get_fault(self):
         """
@@ -187,6 +192,16 @@ class KAT500:
         Clears any fault and turns off the FAULT LED on the tuner.
         """
         self._write_command("FLTC")
+        fault_code = self._read_response()
+
+    def get_tuning(self):
+        """
+        Returns True if the KAT500 is currently tuning and False if not. Uses the "TP;" or "Tune Poll" command.
+        """
+        self._write_command("TP")
+        if self._read_response() == "TP1":
+            return True
+        return False
 
     def __del__(self):
         """
